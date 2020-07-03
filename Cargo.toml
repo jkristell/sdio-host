@@ -1,0 +1,8 @@
+[package]
+name = "sdio-utils"
+version = "0.1.0"
+authors = ["Johan Kristell <johan@jott.se>"]
+edition = "2018"
+
+[dependencies]
+bitfield = "0.13.2"
