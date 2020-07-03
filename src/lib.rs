@@ -12,15 +12,18 @@ pub enum CardCapacity {
 
 #[derive(Debug, Copy, Clone)]
 pub enum SdSpecVersion {
+    /// Version 1.0 and and 1.0.1
     V1_0,
+    /// Version 1.10
     V1_10,
+    /// Version 2.0
     V2,
+    /// Version 3.0
     V3,
+    /// Version 4.0
     V4,
     Unsupported,
 }
-
-
 
 bitfield!{
     #[derive(Copy, Clone, Default)]
@@ -63,22 +66,29 @@ bitfield!{
     pub struct Cid([u32]);
     impl Debug;
     pub u8, crc7, _: 7, 1;
-    pub u16, manufacturing_date, _ : 19, 8;
-    pub u32, product_serialnum, _ : 55, 24;
-    pub u64, product_name, _ : 103, 64;
-    pub u16, oid, _ : 119, 104;
-    pub u8, mid, _ : 127, 120;
+    pub u16, manufacturing_date, _: 19, 8;
+    pub u32, product_serialnum, _: 55, 24;
+    pub u64, product_name, _: 103, 64;
+    pub u16, oid, _: 119, 104;
+    pub u8, mid, _: 127, 120;
 }
+
+impl Cid<[u32; 4]> {
+    pub fn name(&self) -> [u8; 8] {
+        let pn: u64 = self.product_name();
+
+        pn.to_be_bytes()
+    }
+}
+
 
 bitfield!{
     #[derive(Copy, Clone, Default)]
     /// Sd memory card configuration
     pub struct Scr([u32]);
     impl Debug;
-
-    //TODO: Into Sd Spec, 1, 1.10, 2
     pub u8, sd_spec, _: 59, 56;
-    /// Memory card should support both 1 and 4 wioth bus
+    /// Note: Memory cards should support both 1 and 4 wide bus
     pub u8, bus_widths, _: 51, 48;
     pub bool, sd_spec3, _: 47;
     pub bool, sd_spec4, _: 42;
@@ -148,7 +158,6 @@ bitfield!{
     /// Card identification (Version 2)
     pub struct CsdV2([u32]);
     impl Debug;
-
     pub u32, device_size, _: 69, 48;
 }
 
@@ -181,57 +190,15 @@ bitfield!{
     /// Sd Card Status
     pub struct SdStatus([u32]);
     impl Debug;
-
-    ///  (C_SIZE)
-    pub u16, device_size, _: 73, 62;
-    /// (C_SIZE_MULT)
-    pub u8, device_size_multiplier, _: 49, 47;
-    /// (READ_BL_LEN)
-    pub u8, read_block_len, _: 83, 80;
+    /// bus_width
+    pub u8, bus_width, _: 511, 510;
+    /// Secure mode
+    pub bool, secure_mode, _: 509;
+    /// Card type
+    pub u16, sd_card_type, _: 495, 480;
+    pub u32, protected_area_size, _: 479, 448;
+    pub u8, speed_class, _: 447, 440;
+    pub u8, app_perf_class, _: 339, 336;
+    pub bool, discard_support, _: 313;
 }
 
-
-
-#[derive(Debug, Default, Copy, Clone)]
-/// Sd card status
-pub struct Status {
-    pub bus_width: u8,
-    pub secure_mode: u8,
-    pub card_type: u16,
-    pub protected_area_size: u32,
-    pub speed_class: u8,
-    pub performance_move: u8,
-    pub allocation_units: u8,
-    pub erase_size: u16,
-    pub erase_timeout: u8,
-    pub erase_offset: u8,
-}
-
-/*
-Status {
-bus_width: ((self.status[0] & 0xC0) >> 6) as u8,
-secure_mode: ((self.status[0] & 0x20) >> 5) as u8,
-card_type: (((self.status[0] & 0x00FF_0000) >> 8)
-| ((self.status[0] & 0xFF00_0000) >> 24)) as u16,
-protected_area_size: (((self.status[1] & 0xFF) << 24)
-| ((self.status[1] & 0x0000_FF00) << 8)
-| ((self.status[1] & 0x00FF_0000) >> 8)
-| ((self.status[1] & 0xFF00_0000) >> 24)),
-speed_class: (self.status[2] & 0xFF) as u8,
-performance_move: ((self.status[2] & 0xFF00) >> 8) as u8,
-allocation_units: ((self.status[2] & 0x00F0_0000) >> 20) as u8,
-erase_size: (((self.status[2] & 0xFF00_0000) >> 16) | (self.status[3] & 0xFF)) as u16,
-erase_timeout: ((self.status[3] & 0xFC00) >> 10) as u8,
-erase_offset: ((self.status[3] & 0x0300) >> 8) as u8,
-}
-
- */
-
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
