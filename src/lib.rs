@@ -55,7 +55,7 @@ bitfield! {
     pub uhs2_card_status, _: 29;
     /// Card capacity, valid after power up
     /// True if SDHC or SDXC card is found, false for SDSC
-    pub capacity, _: 30;
+    pub high_capacity, _: 30;
     /// Set to true when card has finished the power up routine
     pub powered, _: 31;
 }

@@ -40,7 +40,7 @@ struct OcrRes {
     v18_allowed: bool,
     over_2tb: bool,
     uhs2_card_status: bool,
-    capacity: bool,
+    high_capacity: bool,
     powered: bool,
 }
 
@@ -94,7 +94,7 @@ static CARDS: &[TestCard] = &[
             v18_allowed: false,
             over_2tb: false,
             uhs2_card_status: false,
-            capacity: true,
+            high_capacity: true,
             powered: true,
         },
 
@@ -151,7 +151,7 @@ static CARDS: &[TestCard] = &[
             v18_allowed: false,
             over_2tb: false,
             uhs2_card_status: false,
-            capacity: true,
+            high_capacity: true,
             powered: true,
         },
 
@@ -232,7 +232,7 @@ fn test_ocr() {
         assert_eq!(ocr.v18_allowed(), card.ocrr.v18_allowed);
         assert_eq!(ocr.over_2tb(), card.ocrr.over_2tb);
         assert_eq!(ocr.uhs2_card_status(), card.ocrr.uhs2_card_status);
-        assert_eq!(ocr.capacity(), card.ocrr.capacity);
+        assert_eq!(ocr.high_capacity(), card.ocrr.high_capacity);
         assert_eq!(ocr.powered(), card.ocrr.powered);
     }
 }
