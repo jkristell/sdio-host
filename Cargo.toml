@@ -3,6 +3,17 @@ name = "sdio-host"
 version = "0.1.0"
 authors = ["Johan Kristell <johan@jott.se>"]
 edition = "2018"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/jkristell/sdio-host"
+keywords = [
+    "sd",
+    "sdio",
+]
+categories = [
+    "embedded",
+    "no-std",
+]
 
 [dependencies]
 bitfield = "0.13.2"
