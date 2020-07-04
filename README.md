@@ -5,6 +5,7 @@ Data structures for making sd data structures, such as, responses readable for h
 ## Todo
  - [ ] Implement Commands
  - [ ] Add all the missing fields
+ - [ ] Add more custom data types for fields
 
 ## Resources
 
