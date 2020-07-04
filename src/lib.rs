@@ -10,7 +10,7 @@ pub enum CardCapacity {
     SDHC,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum SdSpecVersion {
     /// Version 1.0 and and 1.0.1
     V1_0,
@@ -25,7 +25,7 @@ pub enum SdSpecVersion {
     Unsupported,
 }
 
-bitfield!{
+bitfield! {
     #[derive(Copy, Clone, Default)]
     /// Card power status
     pub struct Ocr(u32);
@@ -60,29 +60,33 @@ bitfield!{
     pub powered, _: 31;
 }
 
-bitfield!{
+bitfield! {
     #[derive(Copy, Clone, Default)]
     /// Card identification
     pub struct Cid([u32]);
     impl Debug;
     pub u8, crc7, _: 7, 1;
-    pub u16, manufacturing_date, _: 19, 8;
-    pub u32, product_serialnum, _: 55, 24;
-    pub u64, product_name, _: 103, 64;
+    pub u16, date, _: 19, 8;
+    pub u32, serial, _: 55, 24;
+    pub u64, name, _: 103, 64;
     pub u16, oid, _: 119, 104;
     pub u8, mid, _: 127, 120;
 }
 
 impl Cid<[u32; 4]> {
-    pub fn name(&self) -> [u8; 8] {
-        let pn: u64 = self.product_name();
+    pub fn name_bytes(&self) -> [u8; 5] {
+        let bytes = self.name().to_be_bytes();
+        let mut ret = [0u8; 5];
+        ret.copy_from_slice(&bytes[3..]);
+        ret
+    }
 
-        pn.to_be_bytes()
+    pub fn oem(&self) -> [u8; 2] {
+        self.oid().to_be_bytes()
     }
 }
 
-
-bitfield!{
+bitfield! {
     #[derive(Copy, Clone, Default)]
     /// Sd memory card configuration
     pub struct Scr([u32]);
@@ -124,7 +128,7 @@ impl Csd {
         }
     }
 
-    pub fn card_size(&self) -> u32 {
+    pub fn card_size(&self) -> u64 {
         match self {
             Csd::V1(csd) => csd.card_size(),
             Csd::V2(csd) => csd.card_size(),
@@ -139,7 +143,7 @@ impl Csd {
     }
 }
 
-bitfield!{
+bitfield! {
     #[derive(Copy, Clone, Default)]
     /// Card identification (Version 1)
     pub struct CsdV1([u32]);
@@ -151,41 +155,47 @@ bitfield!{
     pub u8, device_size_multiplier, _: 49, 47;
     /// (READ_BL_LEN)
     pub u8, read_block_len, _: 83, 80;
+    pub u8, version, _: 127, 126;
 }
 
-bitfield!{
+bitfield! {
     #[derive(Copy, Clone, Default)]
     /// Card identification (Version 2)
     pub struct CsdV2([u32]);
     impl Debug;
     pub u32, device_size, _: 69, 48;
+    pub u8, version, _: 127, 126;
 }
 
 impl CsdV1<[u32; 4]> {
-    pub fn card_size(&self) -> u32 {
+    pub fn card_size(&self) -> u64 {
         let blocks = self.blocks();
-        let blk_len: u32 = 1u32 << self.read_block_len() as u32;
-        blocks * blk_len
+        let blk_len: u64 = 1u64 << self.read_block_len() as u64;
+        (blocks as u64 * blk_len) as u64
     }
 
     pub fn blocks(&self) -> u32 {
         let blocks: u32 = 1u32 + (self.device_size() as u32);
-        let multiplier: u32 = 1u32 << (2u32 + (self.device_size_multiplier() as u32));
+        let multiplier: u32 = 1 << (2u32 + (self.device_size_multiplier() as u32));
         blocks * multiplier
     }
 }
 
 impl CsdV2<[u32; 4]> {
-    pub fn card_size(&self) -> u32 {
-        (self.device_size() + 1) * 1024 * 512
+    /// Card size in bytes
+    /// The memory capacity is calculated as (device_size (A.k.a C_SIZE) + 1) * 512kb
+    pub fn card_size(&self) -> u64 {
+        self.blocks() as u64 * 512
     }
 
+    /// Number of blocks
+    /// Block size is fixed at 512
     pub fn blocks(&self) -> u32 {
         (self.device_size() + 1) * 1024
     }
 }
 
-bitfield!{
+bitfield! {
     #[derive(Copy, Clone, Default)]
     /// Sd Card Status
     pub struct SdStatus([u32]);
@@ -201,4 +211,3 @@ bitfield!{
     pub u8, app_perf_class, _: 339, 336;
     pub bool, discard_support, _: 313;
 }
-
