@@ -27,7 +27,7 @@ pub enum SdSpecVersion {
 
 bitfield! {
     #[derive(Copy, Clone, Default)]
-    /// Card power status
+    /// Card power status (R3)
     pub struct Ocr(u32);
     impl Debug;
     /// Voltage range 2.7 - 2.8 supported
@@ -62,7 +62,7 @@ bitfield! {
 
 bitfield! {
     #[derive(Copy, Clone, Default)]
-    /// Card identification
+    /// Card identification (R2)
     pub struct Cid([u32]);
     impl Debug;
     pub u8, crc7, _: 7, 1;
@@ -145,7 +145,7 @@ impl Csd {
 
 bitfield! {
     #[derive(Copy, Clone, Default)]
-    /// Card identification (Version 1)
+    /// Card identification (Version 1) (R2)
     pub struct CsdV1([u32]);
     impl Debug;
 
@@ -160,7 +160,7 @@ bitfield! {
 
 bitfield! {
     #[derive(Copy, Clone, Default)]
-    /// Card identification (Version 2)
+    /// Card identification (Version 2) (R2)
     pub struct CsdV2([u32]);
     impl Debug;
     pub u32, device_size, _: 69, 48;
@@ -210,4 +210,26 @@ bitfield! {
     pub u8, speed_class, _: 447, 440;
     pub u8, app_perf_class, _: 339, 336;
     pub bool, discard_support, _: 313;
+}
+
+bitfield! {
+    #[derive(Copy, Clone, Default)]
+    /// Relative Card Address (R6)
+    pub struct Rca(u32);
+    impl Debug;
+    /// Get the address of the card
+    pub u16, address, _: 31, 16;
+    pub u16, status, set_status: 15, 0;
+}
+
+bitfield! {
+    #[derive(Copy, Clone, Default)]
+    /// Card interface condiftion (R7)
+    pub struct Cic(u32);
+    impl Debug;
+    /// The voltage ranges the card accepts
+    /// 0b0001 2.7 - 3.6 V
+    pub u8, voltage_accepted, _: 11, 8;
+    /// Echo-back of the check pattern
+    pub u8, checkpattern, _: 7, 0;
 }
