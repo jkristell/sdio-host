@@ -1,4 +1,5 @@
-use sdio_host::{Cid, Csd, Ocr, Scr, SdSpecVersion, SdStatus};
+use sdio_host::{BusWidth, SDSpecVersion};
+use sdio_host::{SDStatus, CID, CSD, OCR, SCR};
 
 struct TestCard {
     cid: [u32; 4],
@@ -28,15 +29,7 @@ struct CsdRes {
 }
 
 struct OcrRes {
-    v27_28: bool,
-    v28_29: bool,
-    v29_30: bool,
-    v30_31: bool,
-    v31_32: bool,
-    v32_33: bool,
-    v33_34: bool,
-    v34_35: bool,
-    v35_36: bool,
+    voltage_window_mv: (u16, u16),
     v18_allowed: bool,
     over_2tb: bool,
     uhs2_card_status: bool,
@@ -45,7 +38,7 @@ struct OcrRes {
 }
 
 struct StatusRes {
-    bus_width: u8,
+    bus_width: BusWidth,
     secure_mode: bool,
     sd_card_type: u16,
     protected_area_size: u32,
@@ -60,7 +53,7 @@ struct ScrRes {
     sd_spec3: bool,
     sd_spec4: bool,
     sd_spec5: u8,
-    version: SdSpecVersion,
+    version: SDSpecVersion,
 }
 
 static CARDS: &[TestCard] = &[
@@ -82,15 +75,7 @@ static CARDS: &[TestCard] = &[
         },
         ocr: 3237969920,
         ocrr: OcrRes {
-            v27_28: true,
-            v28_29: true,
-            v29_30: true,
-            v30_31: true,
-            v31_32: true,
-            v32_33: true,
-            v33_34: true,
-            v34_35: true,
-            v35_36: true,
+            voltage_window_mv: (2700, 3600),
             v18_allowed: false,
             over_2tb: false,
             uhs2_card_status: false,
@@ -102,7 +87,7 @@ static CARDS: &[TestCard] = &[
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 134676480, 33722368, 50331648, 2147483648,
         ],
         statusr: StatusRes {
-            bus_width: 2,
+            bus_width: BusWidth::Four,
             secure_mode: false,
             sd_card_type: 0,
             protected_area_size: 50331648,
@@ -117,7 +102,7 @@ static CARDS: &[TestCard] = &[
             sd_spec3: true,
             sd_spec4: false,
             sd_spec5: 0,
-            version: SdSpecVersion::V3,
+            version: SDSpecVersion::V3,
         },
     },
     // Sandisk 8 Gb Class 4
@@ -139,15 +124,7 @@ static CARDS: &[TestCard] = &[
 
         ocr: 3237969920,
         ocrr: OcrRes {
-            v27_28: true,
-            v28_29: true,
-            v29_30: true,
-            v30_31: true,
-            v31_32: true,
-            v32_33: true,
-            v33_34: true,
-            v34_35: true,
-            v35_36: true,
+            voltage_window_mv: (2700, 3600),
             v18_allowed: false,
             over_2tb: false,
             uhs2_card_status: false,
@@ -159,7 +136,7 @@ static CARDS: &[TestCard] = &[
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 184877056, 33722368, 50331648, 2147483648,
         ],
         statusr: StatusRes {
-            bus_width: 2,
+            bus_width: BusWidth::Four,
             secure_mode: false,
             sd_card_type: 0,
             protected_area_size: 50331648,
@@ -175,7 +152,7 @@ static CARDS: &[TestCard] = &[
             sd_spec3: true,
             sd_spec4: false,
             sd_spec5: 0,
-            version: SdSpecVersion::V3,
+            version: SDSpecVersion::V3,
         },
     },
 ];
@@ -183,69 +160,57 @@ static CARDS: &[TestCard] = &[
 #[test]
 fn test_cid() {
     for card in CARDS {
-        let cid = Cid(card.cid);
+        let cid: CID = card.cid.into();
         println!("{:?}", cid);
 
         assert_eq!(cid.serial(), card.cidr.serial);
-        assert_eq!(cid.mid(), card.cidr.mid);
+        assert_eq!(cid.manufacturer_id(), card.cidr.mid);
 
-        let name_bytes = cid.name_bytes();
-        let name = std::str::from_utf8(&name_bytes).unwrap();
-        assert_eq!(name, card.cidr.name);
-
-        let oemb = cid.oem();
-        let oem = std::str::from_utf8(&oemb).unwrap();
-        assert_eq!(oem, card.cidr.oem);
+        assert_eq!(cid.product_name(), card.cidr.name);
+        assert_eq!(cid.oem_id(), card.cidr.oem);
     }
 }
 
 #[test]
 fn test_csd() {
     for card in CARDS {
-        let csd = Csd::parse(card.csd).unwrap();
+        let csd: CSD = card.csd.into();
+        println!("{:?}", csd);
 
-        if let Csd::V2(csd) = csd {
-            assert_eq!(csd.version(), card.csdr.version);
-            assert_eq!(csd.device_size(), card.csdr.device_size);
-            assert_eq!(csd.blocks(), card.csdr.blocks);
-            assert_eq!(csd.card_size(), card.csdr.size_bytes);
-        } else if let Csd::V1(_csd) = csd {
-        } else {
-            assert!(false);
-        }
+        assert_eq!(csd.version(), card.csdr.version);
+        assert_eq!(csd.block_count(), card.csdr.blocks);
+        assert_eq!(csd.card_size(), card.csdr.size_bytes);
     }
 }
 
 #[test]
 fn test_ocr() {
     for card in CARDS {
-        let ocr = Ocr(card.ocr);
-        assert_eq!(ocr.v27_28(), card.ocrr.v27_28);
-        assert_eq!(ocr.v28_29(), card.ocrr.v28_29);
-        assert_eq!(ocr.v29_30(), card.ocrr.v29_30);
-        assert_eq!(ocr.v30_31(), card.ocrr.v30_31);
-        assert_eq!(ocr.v31_32(), card.ocrr.v31_32);
-        assert_eq!(ocr.v32_33(), card.ocrr.v32_33);
-        assert_eq!(ocr.v33_34(), card.ocrr.v33_34);
-        assert_eq!(ocr.v34_35(), card.ocrr.v34_35);
-        assert_eq!(ocr.v35_36(), card.ocrr.v35_36);
+        let ocr: OCR = card.ocr.into();
+        println!("{:?}", ocr);
+
+        assert_eq!(
+            ocr.voltage_window_mv().unwrap(),
+            card.ocrr.voltage_window_mv
+        );
         assert_eq!(ocr.v18_allowed(), card.ocrr.v18_allowed);
         assert_eq!(ocr.over_2tb(), card.ocrr.over_2tb);
         assert_eq!(ocr.uhs2_card_status(), card.ocrr.uhs2_card_status);
         assert_eq!(ocr.high_capacity(), card.ocrr.high_capacity);
-        assert_eq!(ocr.powered(), card.ocrr.powered);
+        assert_eq!(ocr.is_busy(), !card.ocrr.powered);
     }
 }
 
 #[test]
 fn test_sdstatus() {
     for card in CARDS {
-        let status = SdStatus(card.status);
+        let status: SDStatus = card.status.into();
+        println!("{:?}", status);
 
         let r = &card.statusr;
         assert_eq!(status.bus_width(), r.bus_width);
         assert_eq!(status.secure_mode(), r.secure_mode);
-        assert_eq!(status.sd_card_type(), r.sd_card_type);
+        assert_eq!(status.sd_memory_card_type(), r.sd_card_type);
         assert_eq!(status.protected_area_size(), r.protected_area_size);
         assert_eq!(status.speed_class(), r.speed_class);
         assert_eq!(status.app_perf_class(), r.app_perf_class);
@@ -256,14 +221,11 @@ fn test_sdstatus() {
 #[test]
 fn test_scr() {
     for card in CARDS {
-        let scr = Scr(card.scr);
+        let scr: SCR = card.scr.into();
+        println!("{:?}", scr);
 
         let r = &card.scrr;
-        assert_eq!(scr.sd_spec(), r.sd_spec);
         assert_eq!(scr.bus_widths(), r.bus_widths);
-        assert_eq!(scr.sd_spec3(), r.sd_spec3);
-        assert_eq!(scr.sd_spec4(), r.sd_spec4);
-        assert_eq!(scr.sd_spec5(), r.sd_spec5);
         assert_eq!(scr.version(), r.version);
     }
 }
