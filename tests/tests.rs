@@ -1,4 +1,4 @@
-use sdio_host::{BusWidth, SDSpecVersion};
+use sdio_host::{BusWidth, CurrentConsumption, SDSpecVersion};
 use sdio_host::{SDStatus, CID, CSD, OCR, SCR};
 
 struct TestCard {
@@ -19,13 +19,21 @@ struct CidRes {
     serial: u32,
     name: &'static str,
     oem: &'static str,
+    revision: u8,
+    m_month: u8,
+    m_year: u16,
 }
 
 struct CsdRes {
     version: u8,
-    device_size: u32,
+    transfer_rate: u8,
     blocks: u32,
     size_bytes: u64,
+    read_current_minimum_vdd: CurrentConsumption,
+    write_current_minimum_vdd: CurrentConsumption,
+    read_current_maximum_vdd: CurrentConsumption,
+    write_current_maximum_vdd: CurrentConsumption,
+    erase_size_blocks: u32,
 }
 
 struct OcrRes {
@@ -43,16 +51,18 @@ struct StatusRes {
     sd_card_type: u16,
     protected_area_size: u32,
     speed_class: u8,
+    video_speed_class: u8,
     app_perf_class: u8,
+    move_performance: u8,
+    allocation_unit_size: u8,
+    erase_size: u16,
+    erase_timeout: u8,
     discard_support: bool,
 }
 
 struct ScrRes {
-    sd_spec: u8,
     bus_widths: u8,
-    sd_spec3: bool,
-    sd_spec4: bool,
-    sd_spec5: u8,
+
     version: SDSpecVersion,
 }
 
@@ -65,13 +75,21 @@ static CARDS: &[TestCard] = &[
             serial: 3668033524,
             name: "Y08AG",
             oem: "PA",
+            revision: 19,
+            m_month: 5,
+            m_year: 2018,
         },
         csd: [171966712, 968064896, 1532559360, 1074659378],
         csdr: CsdRes {
             version: 1,
-            device_size: 14771,
+            transfer_rate: 50,
             blocks: 15126528,
             size_bytes: 7744782336,
+            read_current_minimum_vdd: CurrentConsumption::I_100mA,
+            write_current_minimum_vdd: CurrentConsumption::I_100mA,
+            read_current_maximum_vdd: CurrentConsumption::I_200mA,
+            write_current_maximum_vdd: CurrentConsumption::I_200mA,
+            erase_size_blocks: 1,
         },
         ocr: 3237969920,
         ocrr: OcrRes {
@@ -92,16 +110,17 @@ static CARDS: &[TestCard] = &[
             sd_card_type: 0,
             protected_area_size: 50331648,
             speed_class: 2, // Class 4
+            video_speed_class: 0,
             app_perf_class: 0,
+            move_performance: 2, // MB/s
+            allocation_unit_size: 9,
+            erase_size: 8,
+            erase_timeout: 1,
             discard_support: false,
         },
         scr: [16777216, 37060608],
         scrr: ScrRes {
-            sd_spec: 2,
             bus_widths: 5,
-            sd_spec3: true,
-            sd_spec4: false,
-            sd_spec5: 0,
             version: SDSpecVersion::V3,
         },
     },
@@ -113,13 +132,21 @@ static CARDS: &[TestCard] = &[
             serial: 508307843,
             name: "SU08G",
             oem: "SD",
+            revision: 128,
+            m_month: 2,
+            m_year: 2013,
         },
         csd: [171983022, 993492864, 1532559360, 1074659378],
         csdr: CsdRes {
             version: 1,
-            device_size: 15159,
+            transfer_rate: 50,
             size_bytes: 7948206080,
             blocks: 15523840,
+            read_current_minimum_vdd: CurrentConsumption::I_100mA,
+            write_current_minimum_vdd: CurrentConsumption::I_100mA,
+            read_current_maximum_vdd: CurrentConsumption::I_200mA,
+            write_current_maximum_vdd: CurrentConsumption::I_200mA,
+            erase_size_blocks: 1,
         },
 
         ocr: 3237969920,
@@ -141,17 +168,18 @@ static CARDS: &[TestCard] = &[
             sd_card_type: 0,
             protected_area_size: 50331648,
             speed_class: 2, // Class 4
+            video_speed_class: 0,
             app_perf_class: 0,
+            move_performance: 2, // MB/s
+            allocation_unit_size: 9,
+            erase_size: 11,
+            erase_timeout: 1,
             discard_support: false,
         },
 
         scr: [0, 37060609],
         scrr: ScrRes {
-            sd_spec: 2,
             bus_widths: 5,
-            sd_spec3: true,
-            sd_spec4: false,
-            sd_spec5: 0,
             version: SDSpecVersion::V3,
         },
     },
@@ -165,9 +193,13 @@ fn test_cid() {
 
         assert_eq!(cid.serial(), card.cidr.serial);
         assert_eq!(cid.manufacturer_id(), card.cidr.mid);
+        assert_eq!(cid.product_revision(), card.cidr.revision);
 
         assert_eq!(cid.product_name(), card.cidr.name);
         assert_eq!(cid.oem_id(), card.cidr.oem);
+
+        assert_eq!(cid.manufacturing_date().0, card.cidr.m_month);
+        assert_eq!(cid.manufacturing_date().1, card.cidr.m_year);
     }
 }
 
@@ -178,8 +210,28 @@ fn test_csd() {
         println!("{:?}", csd);
 
         assert_eq!(csd.version(), card.csdr.version);
+        assert_eq!(csd.transfer_rate(), card.csdr.transfer_rate);
+
         assert_eq!(csd.block_count(), card.csdr.blocks);
         assert_eq!(csd.card_size(), card.csdr.size_bytes);
+
+        assert_eq!(
+            csd.read_current_minimum_vdd(),
+            card.csdr.read_current_minimum_vdd
+        );
+        assert_eq!(
+            csd.write_current_minimum_vdd(),
+            card.csdr.write_current_minimum_vdd
+        );
+        assert_eq!(
+            csd.read_current_maximum_vdd(),
+            card.csdr.read_current_maximum_vdd
+        );
+        assert_eq!(
+            csd.write_current_maximum_vdd(),
+            card.csdr.write_current_maximum_vdd
+        );
+        assert_eq!(csd.erase_size_blocks(), card.csdr.erase_size_blocks);
     }
 }
 
@@ -213,7 +265,12 @@ fn test_sdstatus() {
         assert_eq!(status.sd_memory_card_type(), r.sd_card_type);
         assert_eq!(status.protected_area_size(), r.protected_area_size);
         assert_eq!(status.speed_class(), r.speed_class);
+        assert_eq!(status.video_speed_class(), r.video_speed_class);
         assert_eq!(status.app_perf_class(), r.app_perf_class);
+        assert_eq!(status.move_performance(), r.move_performance);
+        assert_eq!(status.allocation_unit_size(), r.allocation_unit_size);
+        assert_eq!(status.erase_size(), r.erase_size);
+        assert_eq!(status.erase_timeout(), r.erase_timeout);
         assert_eq!(status.discard_support(), r.discard_support);
     }
 }

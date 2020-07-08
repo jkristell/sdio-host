@@ -73,7 +73,7 @@ pub enum BlockSize {
     B2048 = 11,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 #[allow(non_camel_case_types)]
 pub enum CurrentConsumption {
     I_0mA,
@@ -199,9 +199,10 @@ impl fmt::Debug for OCR {
                 &self.voltage_window_mv().unwrap_or((0, 0)),
             )
             .field("S18A (UHS-I only)", &self.v18_allowed())
+            .field("Over 2TB flag (SDUC only)", &self.over_2tb())
             .field("UHS-II Card", &self.uhs2_card_status())
             .field(
-                "CSS",
+                "Card Capacity Status (CSS)",
                 &if self.high_capacity() {
                     "SDHC/SDXC/SDUC"
                 } else {
@@ -363,7 +364,7 @@ impl CSD {
         (self.0 >> 126) as u8 & 3
     }
     /// Maximum data transfer rate per one data line
-    pub fn tranfer_rate(&self) -> u8 {
+    pub fn transfer_rate(&self) -> u8 {
         (self.0 >> 96) as u8
     }
     /// Maximum block length. In an SD Memory Card the WRITE_BL_LEN is
@@ -436,8 +437,9 @@ impl CSD {
 impl fmt::Debug for CSD {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("CSD: Card Specific Data")
-            .field("Tranfer Rate", &self.tranfer_rate())
+            .field("Transfer Rate", &self.transfer_rate())
             .field("Block Count", &self.block_count())
+            .field("Card Size (bytes)", &self.card_size())
             .field("Read I (@min VDD)", &self.read_current_minimum_vdd())
             .field("Write I (@min VDD)", &self.write_current_minimum_vdd())
             .field("Read I (@max VDD)", &self.read_current_maximum_vdd())
@@ -495,7 +497,7 @@ impl SDStatus {
     pub fn erase_size(&self) -> u16 {
         (self.inner[13] & 0xFF) as u16 | ((self.inner[12] >> 24) & 0xFF) as u16
     }
-    /// Indicates T_Erase
+    /// Indicates T_Erase / Erase Timeout (s)
     pub fn erase_timeout(&self) -> u8 {
         (self.inner[12] >> 18) as u8 & 0x3F
     }
@@ -515,12 +517,18 @@ impl SDStatus {
 impl fmt::Debug for SDStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("SD Status")
+            .field("Bus Width", &self.bus_width())
+            .field("Secured Mode", &self.secure_mode())
+            .field("SD Memory Card Type", &self.sd_memory_card_type())
             .field("Protected Area Size (B)", &self.protected_area_size())
             .field("Speed Class", &self.speed_class())
+            .field("Video Speed Class", &self.video_speed_class())
+            .field("Application Performance Class", &self.app_perf_class())
             .field("Move Performance (MB/s)", &self.move_performance())
             .field("AU Size", &self.allocation_unit_size())
-            .field("Erase Size (AU)", &self.erase_size())
+            .field("Erase Size (units of AU)", &self.erase_size())
             .field("Erase Timeout (s)", &self.erase_timeout())
+            .field("Discard Support", &self.discard_support())
             .finish()
     }
 }
