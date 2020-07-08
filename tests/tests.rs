@@ -183,6 +183,65 @@ static CARDS: &[TestCard] = &[
             version: SDSpecVersion::V3,
         },
     },
+    // Sandisk extreme 32Gb Class 10
+    TestCard {
+        cid: [0xc000e344, 0x80f1086b, 0x45333247, 0x03534453],
+        cidr: CidRes {
+            mid: 3,
+            serial: 4043860928,
+            name: "SE32G",
+            oem: "SD",
+            revision: 128,
+            m_month: 3,
+            m_year: 2014,
+        },
+        csd: [0x0a4040c2, 0xedc87f80, 0x5b590000, 0x400e0032],
+        csdr: CsdRes {
+            version: 1,
+            transfer_rate: 50,
+            size_bytes: 31914983424,
+            blocks: 62333952,
+            read_current_minimum_vdd: CurrentConsumption::I_100mA,
+            write_current_minimum_vdd: CurrentConsumption::I_100mA,
+            read_current_maximum_vdd: CurrentConsumption::I_200mA,
+            write_current_maximum_vdd: CurrentConsumption::I_200mA,
+            erase_size_blocks: 1,
+        },
+
+        ocr: 3254747136,
+        ocrr: OcrRes {
+            voltage_window_mv: (2700, 3600),
+            v18_allowed: true,
+            over_2tb: false,
+            uhs2_card_status: false,
+            high_capacity: true,
+            powered: true,
+        },
+
+        status: [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 251992576, 67145728, 83886080, 2147483648,
+        ],
+        statusr: StatusRes {
+            bus_width: BusWidth::Four,
+            secure_mode: false,
+            sd_card_type: 0,
+            protected_area_size: 83886080,
+            speed_class: 4, // Class 10
+            video_speed_class: 0,
+            app_perf_class: 0,
+            move_performance: 0, // Ignore for class 10
+            allocation_unit_size: 9,
+            erase_size: 15,
+            erase_timeout: 1,
+            discard_support: false,
+        },
+
+        scr: [0x00000000, 0x02358001],
+        scrr: ScrRes {
+            bus_widths: 5,
+            version: SDSpecVersion::V3,
+        },
+    },
 ];
 
 #[test]
