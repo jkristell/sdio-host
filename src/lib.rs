@@ -1,6 +1,6 @@
 //! SD Card Registers
 //!
-//! Register represenations can be created from an array of little endian
+//! Register representations can be created from an array of little endian
 //! words. Note that the SDMMC protocol transfers the registers in big endian
 //! byte order.
 //!
