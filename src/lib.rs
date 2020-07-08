@@ -13,8 +13,6 @@
 
 use core::{fmt, str};
 
-use bitfield::bitfield;
-
 /// Types of SD Card
 #[derive(Debug, Copy, Clone)]
 #[non_exhaustive]
@@ -533,24 +531,44 @@ impl fmt::Debug for SDStatus {
     }
 }
 
-bitfield! {
-    #[derive(Copy, Clone, Default)]
-    /// Relative Card Address (R6)
-    pub struct Rca(u32);
-    impl Debug;
-    /// Get the address of the card
-    pub u16, address, _: 31, 16;
-    pub u16, status, set_status: 15, 0;
+/// Relative Card Address (RCA)
+///
+/// R6
+#[derive(Copy, Clone, Default)]
+pub struct RCA(u32);
+impl From<u32> for RCA {
+    fn from(word: u32) -> Self {
+        Self(word)
+    }
+}
+impl RCA {
+    /// Address of card
+    pub fn address(&self) -> u16 {
+        (self.0 >> 16) as u16
+    }
+    /// Status
+    pub fn status(&self) -> u16 {
+        self.0 as u16
+    }
 }
 
-bitfield! {
-    #[derive(Copy, Clone, Default)]
-    /// Card interface condiftion (R7)
-    pub struct Cic(u32);
-    impl Debug;
-    /// The voltage ranges the card accepts
-    /// 0b0001 2.7 - 3.6 V
-    pub u8, voltage_accepted, _: 11, 8;
-    /// Echo-back of the check pattern
-    pub u8, checkpattern, _: 7, 0;
+/// Card interface condition (R7)
+///
+/// R6
+#[derive(Copy, Clone, Default)]
+pub struct CIC(u32);
+impl From<u32> for CIC {
+    fn from(word: u32) -> Self {
+        Self(word)
+    }
+}
+impl CIC {
+    /// The voltage range the card accepts
+    pub fn voltage_accepted(&self) -> u8 {
+        (self.0 >> 8) as u8
+    }
+    /// Echo-back check pattern
+    pub fn pattern(&self) -> u8 {
+        self.0 as u8
+    }
 }
