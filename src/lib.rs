@@ -553,8 +553,6 @@ impl RCA {
 }
 
 /// Card interface condition (R7)
-///
-/// R6
 #[derive(Copy, Clone, Default)]
 pub struct CIC(u32);
 impl From<u32> for CIC {
