@@ -1,6 +1,6 @@
 [package]
 name = "sdio-host"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Johan Kristell <johan@jott.se>",
            "Richard Meadows <richard@richard.fish>"]
 edition = "2018"
