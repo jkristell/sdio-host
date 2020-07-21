@@ -136,6 +136,45 @@ impl fmt::Debug for CurrentConsumption {
     }
 }
 
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+#[allow(dead_code)]
+pub enum CardState {
+    /// Card state is ready
+    Ready = 1,
+    /// Card is in identification state
+    Identification = 2,
+    /// Card is in standby state
+    Standby = 3,
+    /// Card is in transfer state
+    Transfer = 4,
+    /// Card is sending an operation
+    Sending = 5,
+    /// Card is receiving operation information
+    Receiving = 6,
+    /// Card is in programming state
+    Programming = 7,
+    /// Card is disconnected
+    Disconnected = 8,
+    /// Error
+    Error,
+}
+
+impl From<u8> for CardState {
+    fn from(n: u8) -> Self {
+        match n {
+            1 => Self::Ready,
+            2 => Self::Identification,
+            3 => Self::Standby,
+            4 => Self::Transfer,
+            5 => Self::Sending,
+            6 => Self::Receiving,
+            7 => Self::Programming,
+            8 => Self::Disconnected,
+            _ => Self::Error,
+        }
+    }
+}
+
 /// Operation Conditions Register (OCR)
 ///
 /// R3
@@ -443,6 +482,139 @@ impl fmt::Debug for CSD {
             .field("Read I (@max VDD)", &self.read_current_maximum_vdd())
             .field("Write I (@max VDD)", &self.write_current_maximum_vdd())
             .field("Erase Size (Blocks)", &self.erase_size_blocks())
+            .finish()
+    }
+}
+
+/// Status
+#[derive(Clone, Copy)]
+pub struct CardStatus(u32);
+
+impl From<u32> for CardStatus {
+    fn from(word: u32) -> Self {
+        Self(word)
+    }
+}
+
+impl CardStatus {
+    /// Command's argument was out of range
+    pub fn out_of_range(&self) -> bool {
+        self.0 & 0x8000_0000 != 0
+    }
+    /// Misaligned address
+    pub fn address_error(&self) -> bool {
+        self.0 & 0x4000_0000 != 0
+    }
+    /// Block len error
+    pub fn block_len_error(&self) -> bool {
+        self.0 & 0x2000_0000 != 0
+    }
+    /// Error in the erase commands sequence
+    pub fn erase_seq_error(&self) -> bool {
+        self.0 & 0x1000_0000 != 0
+    }
+    /// Invalid selection of blocks for erase
+    pub fn erase_param(&self) -> bool {
+        self.0 & 0x800_0000 != 0
+    }
+    /// Host attempted to write to protected area
+    pub fn wp_violation(&self) -> bool {
+        self.0 & 0x400_0000 != 0
+    }
+    /// Card is locked by the host
+    pub fn card_is_locked(&self) -> bool {
+        self.0 & 0x200_0000 != 0
+    }
+    /// Password error
+    pub fn lock_unlock_failed(&self) -> bool {
+        self.0 & 0x100_0000 != 0
+    }
+    /// Crc check of previous command failed
+    pub fn com_crc_error(&self) -> bool {
+        self.0 & 0x80_0000 != 0
+    }
+    /// Command is not legal for the card state
+    pub fn illegal_command(&self) -> bool {
+        self.0 & 0x40_0000 != 0
+    }
+    /// Card internal ECC failed
+    pub fn card_ecc_failed(&self) -> bool {
+        self.0 & 0x20_0000 != 0
+    }
+    /// Internal controller error
+    pub fn cc_error(&self) -> bool {
+        self.0 & 0x10_0000 != 0
+    }
+    /// A General error occurred
+    pub fn error(&self) -> bool {
+        self.0 & 0x8_0000 != 0
+    }
+    /// Csd error
+    pub fn csd_overwrite(&self) -> bool {
+        self.0 & 0x1_0000 != 0
+    }
+    /// Some blocks where skiped while erasing
+    pub fn wp_erase_skip(&self) -> bool {
+        self.0 & 0x8000 != 0
+    }
+    /// Command was executed without internal ECC
+    pub fn ecc_disabled(&self) -> bool {
+        self.0 & 0x4000 != 0
+    }
+    /// Erase sequence was aborted
+    pub fn erase_reset(&self) -> bool {
+        self.0 & 0x2000 != 0
+    }
+    /// Current card state
+    pub fn state(&self) -> CardState {
+        CardState::from(((self.0 >> 9) & 0xF) as u8)
+    }
+    /// Corresponds to buffer empty signaling on the bus
+    pub fn ready_for_data(&self) -> bool {
+        self.0 & 0x100 != 0
+    }
+    /// Extension function specific status
+    pub fn fx_event(&self) -> bool {
+        self.0 & 0x40 != 0
+    }
+    /// The card will accept a ACMD
+    pub fn app_cmd(&self) -> bool {
+        self.0 & 0x20 != 0
+    }
+    /// Authentication sequence error
+    pub fn ake_seq_error(&self) -> bool {
+        self.0 & 0x8 != 0
+    }
+}
+
+impl fmt::Debug for CardStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Card Status")
+            .field("Out of range error", &self.out_of_range())
+            .field("Address error", &self.address_error())
+            .field("Block len error", &self.block_len_error())
+            .field("Erase seq error", &self.erase_seq_error())
+            .field("Erase param error", &self.erase_param())
+            .field("Write protect error", &self.wp_violation())
+            .field("Card locked", &self.card_is_locked())
+            .field("Password lock unlock error", &self.lock_unlock_failed())
+            .field(
+                "Crc check for the previous command failed",
+                &self.com_crc_error(),
+            )
+            .field("Illegal command", &self.illegal_command())
+            .field("Card internal ecc failed", &self.card_ecc_failed())
+            .field("Internal card controller error", &self.cc_error())
+            .field("General Error", &self.error())
+            .field("Csd error", &self.csd_overwrite())
+            .field("Write protect error", &self.wp_erase_skip())
+            .field("Command ecc disabled", &self.ecc_disabled())
+            .field("Erase sequence cleared", &self.erase_reset())
+            .field("Card state", &self.state())
+            .field("Buffer empty", &self.ready_for_data())
+            .field("Extension event", &self.fx_event())
+            .field("Card exepct app cmd", &self.app_cmd())
+            .field("Auth process error", &self.ake_seq_error())
             .finish()
     }
 }
