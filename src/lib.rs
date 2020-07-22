@@ -8,6 +8,11 @@
 //! # use sdio_host::SCR;
 //! let scr: SCR = [0, 1].into();
 //! ```
+//!
+//! ## Reference documents:
+//!
+//! PLSS_v7_10: Physical Layer Specification Simplified Specification Version
+//! 7.10. March 25, 2020. (C) SD Card Association
 
 #![no_std]
 
@@ -136,9 +141,12 @@ impl fmt::Debug for CurrentConsumption {
     }
 }
 
+/// CURRENT_STATE enum. Used for R1 response in command queue mode.
+///
+/// Ref PLSS_v7_10 Table 4-75
 #[derive(Eq, PartialEq, Copy, Clone, Debug)]
 #[allow(dead_code)]
-pub enum CardState {
+pub enum CurrentState {
     /// Card state is ready
     Ready = 1,
     /// Card is in identification state
@@ -155,11 +163,13 @@ pub enum CardState {
     Programming = 7,
     /// Card is disconnected
     Disconnected = 8,
+    // 9 - 14: Reserved
+    // 15: Resevered
     /// Error
-    Error,
+    Error = 128,
 }
 
-impl From<u8> for CardState {
+impl From<u8> for CurrentState {
     fn from(n: u8) -> Self {
         match n {
             1 => Self::Ready,
@@ -486,7 +496,11 @@ impl fmt::Debug for CSD {
     }
 }
 
-/// Status
+/// Card Status (R1)
+///
+/// Error and state information of an executed command
+///
+/// Ref PLSS_v7_10 Section 4.10.1
 #[derive(Clone, Copy)]
 pub struct CardStatus(u32);
 
@@ -549,11 +563,13 @@ impl CardStatus {
     pub fn error(&self) -> bool {
         self.0 & 0x8_0000 != 0
     }
-    /// Csd error
+    // Bit 18: Reserved
+    // Bit 17: Reserved
+    /// CSD error
     pub fn csd_overwrite(&self) -> bool {
         self.0 & 0x1_0000 != 0
     }
-    /// Some blocks where skiped while erasing
+    /// Some blocks where skipped while erasing
     pub fn wp_erase_skip(&self) -> bool {
         self.0 & 0x8000 != 0
     }
@@ -566,13 +582,14 @@ impl CardStatus {
         self.0 & 0x2000 != 0
     }
     /// Current card state
-    pub fn state(&self) -> CardState {
-        CardState::from(((self.0 >> 9) & 0xF) as u8)
+    pub fn state(&self) -> CurrentState {
+        CurrentState::from(((self.0 >> 9) & 0xF) as u8)
     }
     /// Corresponds to buffer empty signaling on the bus
     pub fn ready_for_data(&self) -> bool {
         self.0 & 0x100 != 0
     }
+    // Bit 7: Reserved
     /// Extension function specific status
     pub fn fx_event(&self) -> bool {
         self.0 & 0x40 != 0
@@ -581,10 +598,12 @@ impl CardStatus {
     pub fn app_cmd(&self) -> bool {
         self.0 & 0x20 != 0
     }
+    // Bit 4: Reserved
     /// Authentication sequence error
     pub fn ake_seq_error(&self) -> bool {
         self.0 & 0x8 != 0
     }
+    // Bits 2,1,0: Reserved
 }
 
 impl fmt::Debug for CardStatus {
@@ -613,13 +632,17 @@ impl fmt::Debug for CardStatus {
             .field("Card state", &self.state())
             .field("Buffer empty", &self.ready_for_data())
             .field("Extension event", &self.fx_event())
-            .field("Card exepct app cmd", &self.app_cmd())
+            .field("Card expects app cmd", &self.app_cmd())
             .field("Auth process error", &self.ake_seq_error())
             .finish()
     }
 }
 
 /// SD Status
+///
+/// Status bits related to SD Memory Card proprietary features
+///
+/// Ref PLSS_v7_10 Section 4.10.2 SD Status
 #[derive(Clone, Copy, Default)]
 pub struct SDStatus {
     inner: [u32; 16],
