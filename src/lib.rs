@@ -18,6 +18,10 @@
 
 use core::{fmt, str};
 
+pub mod cmd;
+#[doc(inline)]
+pub use cmd::Cmd;
+
 /// Types of SD Card
 #[derive(Debug, Copy, Clone)]
 #[non_exhaustive]
