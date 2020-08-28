@@ -191,17 +191,22 @@ pub fn sd_status() -> Cmd<R1> {
     cmd(13, 0)
 }
 
-/// ACMD41: App Op Command
+/// ACMD41: Initialisation Command
 ///
-/// * `high_capacity` - Host supports high capacity cards
-/// * `xpc` - Controls the maximum power and default speed mode of SDXC and SDUC cards.
-/// * `s18r` - Switch to 1.8V signaling
-/// * `voltage_window` - The voltage window the host supports.
-pub fn sd_send_op_cond(high_capacity: bool, xpc: bool, s18r: bool, voltage_window: u32) -> Cmd<R3> {
-    let arg = u32::from(high_capacity) << 30
-        | u32::from(xpc) << 28
-        | u32::from(s18r) << 24
-        | voltage_window & 0x00FF_FFFF;
+/// * `host_high_capacity_support` - Host supports high capacity cards
+/// * `sdxc_power_control` - Controls the maximum power and default speed mode of SDXC and SDUC cards
+/// * `switch_to_1_8v_request` - Switch to 1.8V signaling
+/// * `voltage_window` - Bitwise voltage window supported by the host
+pub fn send_initialisation_command(
+    host_high_capacity_support: bool,
+    sdxc_power_control: bool,
+    switch_to_1_8v_request: bool,
+    voltage_window: u32,
+) -> Cmd<R3> {
+    let arg = u32::from(host_high_capacity_support) << 30
+        | u32::from(sdxc_power_control) << 28
+        | u32::from(switch_to_1_8v_request) << 24
+        | voltage_window & 0x00FF_8000;
     cmd(41, arg)
 }
 
