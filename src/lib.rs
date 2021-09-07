@@ -127,7 +127,7 @@ impl CurrentConsumption {
     }
     fn from_maximum_reg(reg: u128) -> CurrentConsumption {
         match reg {
-            0 => CurrentConsumption::I_0mA,
+            0 => CurrentConsumption::I_1mA,
             1 => CurrentConsumption::I_5mA,
             2 => CurrentConsumption::I_10mA,
             3 => CurrentConsumption::I_25mA,
