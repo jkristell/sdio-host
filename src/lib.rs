@@ -23,3 +23,4 @@ pub use cmd::Cmd;
 mod common;
 
 pub mod sd;
+pub mod emmc;
