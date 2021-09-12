@@ -3,6 +3,7 @@
 pub use crate::common::*;
 
 /// Type marker for SD-specific extensions.
+#[derive(Clone, Copy, Default)]
 pub struct SD;
 
 use core::{fmt, str};

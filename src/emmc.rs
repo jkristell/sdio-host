@@ -5,6 +5,7 @@ pub use crate::common::*;
 pub use core::str;
 
 /// Type marker for eMMC-specific extensions.
+#[derive(Clone, Copy, Default)]
 pub struct EMMC;
 
 impl OCR<EMMC> {
