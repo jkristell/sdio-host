@@ -114,7 +114,7 @@ impl From<&CurrentConsumption> for u32 {
 }
 impl CurrentConsumption {
     fn from_minimum_reg(reg: u128) -> CurrentConsumption {
-        match reg {
+        match reg & 0x7 {
             0 => CurrentConsumption::I_0mA,
             1 => CurrentConsumption::I_1mA,
             2 => CurrentConsumption::I_5mA,
@@ -126,7 +126,7 @@ impl CurrentConsumption {
         }
     }
     fn from_maximum_reg(reg: u128) -> CurrentConsumption {
-        match reg {
+        match reg & 0x7 {
             0 => CurrentConsumption::I_1mA,
             1 => CurrentConsumption::I_5mA,
             2 => CurrentConsumption::I_10mA,
