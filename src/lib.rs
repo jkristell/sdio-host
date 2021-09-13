@@ -16,9 +16,10 @@
 
 #![no_std]
 
-pub mod cmd;
+pub mod common_cmd;
 #[doc(inline)]
-pub use cmd::Cmd;
+pub use common_cmd::Cmd;
+pub mod sd_cmd;
 
 mod common;
 
