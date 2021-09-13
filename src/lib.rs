@@ -20,6 +20,7 @@ pub mod common_cmd;
 #[doc(inline)]
 pub use common_cmd::Cmd;
 pub mod sd_cmd;
+pub mod emmc_cmd;
 
 mod common;
 
