@@ -1,5 +1,4 @@
-use sdio_host::{BusWidth, CurrentConsumption, SDSpecVersion};
-use sdio_host::{SDStatus, CID, CSD, OCR, SCR};
+use sdio_host::sd::{BusWidth, CID, CSD, CurrentConsumption, OCR, SD, SDSpecVersion, SDStatus, SCR};
 
 struct TestCard {
     cid: [u32; 4],
@@ -247,7 +246,7 @@ static CARDS: &[TestCard] = &[
 #[test]
 fn test_cid() {
     for card in CARDS {
-        let cid: CID = card.cid.into();
+        let cid: CID<SD> = card.cid.into();
         println!("{:?}", cid);
 
         assert_eq!(cid.serial(), card.cidr.serial);
@@ -265,7 +264,7 @@ fn test_cid() {
 #[test]
 fn test_csd() {
     for card in CARDS {
-        let csd: CSD = card.csd.into();
+        let csd: CSD<SD> = card.csd.into();
         println!("{:?}", csd);
 
         assert_eq!(csd.version(), card.csdr.version);
@@ -297,7 +296,7 @@ fn test_csd() {
 #[test]
 fn test_ocr() {
     for card in CARDS {
-        let ocr: OCR = card.ocr.into();
+        let ocr: OCR<SD> = card.ocr.into();
         println!("{:?}", ocr);
 
         assert_eq!(
