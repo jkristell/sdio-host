@@ -68,17 +68,19 @@ pub fn sd_status() -> Cmd<R1> {
 /// * `host_high_capacity_support` - Host supports high capacity cards
 /// * `sdxc_power_control` - Controls the maximum power and default speed mode of SDXC and SDUC cards
 /// * `switch_to_1_8v_request` - Switch to 1.8V signaling
-/// * `voltage_window` - Bitwise voltage window supported by the host
+/// * `voltage_window` - 9-bit bitfield that represents the voltage window
+/// supported by the host. Use 0x1FF to indicate support for the full range of
+/// voltages
 pub fn sd_send_op_cond(
     host_high_capacity_support: bool,
     sdxc_power_control: bool,
     switch_to_1_8v_request: bool,
-    voltage_window: u32,
+    voltage_window: u16,
 ) -> Cmd<R3> {
     let arg = u32::from(host_high_capacity_support) << 30
         | u32::from(sdxc_power_control) << 28
         | u32::from(switch_to_1_8v_request) << 24
-        | voltage_window & 0x00FF_8000;
+        | u32::from(voltage_window & 0x1FF) << 15;
     cmd(41, arg)
 }
 
