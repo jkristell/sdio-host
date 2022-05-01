@@ -201,22 +201,22 @@ impl fmt::Debug for CID<SD> {
 
 impl CSD<SD> {
     /// Number of blocks in the card
-    pub fn block_count(&self) -> u32 {
+    pub fn block_count(&self) -> u64 {
         match self.version() {
             0 => {
                 // SDSC
                 let c_size: u16 = ((self.0 >> 62) as u16) & 0xFFF;
                 let c_size_mult: u8 = ((self.0 >> 47) as u8) & 7;
 
-                ((c_size + 1) as u32) * ((1 << (c_size_mult + 2)) as u32)
+                ((c_size + 1) as u64) * ((1 << (c_size_mult + 2)) as u64)
             }
             1 => {
-                // SDHC / SDXC
-                (((self.0 >> 48) as u32 & 0x3F_FFFF) + 1) * 1024
+                // SDHC/SDXC
+                (((self.0 >> 48) as u64 & 0x3F_FFFF) + 1) * 1024
             }
             2 => {
                 // SDUC
-                (((self.0 >> 48) as u32 & 0xFFF_FFFF) + 1) * 1024
+                (((self.0 >> 48) as u64 & 0xFFF_FFFF) + 1) * 1024
             }
             _ => 0,
         }
