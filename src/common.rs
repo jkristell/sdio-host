@@ -395,7 +395,7 @@ impl<Ext> CardStatus<Ext> {
 /// Relative Card Address (RCA)
 ///
 /// R6
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct RCA<Ext>(pub(crate) u32, PhantomData<Ext>);
 impl<Ext> From<u32> for RCA<Ext> {
     fn from(word: u32) -> Self {
