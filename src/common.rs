@@ -304,7 +304,7 @@ impl<Ext> CSD<Ext> {
 /// Error and state information of an executed command
 ///
 /// Ref PLSS_v7_10 Section 4.10.1
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct CardStatus<Ext>(pub(crate) u32, PhantomData<Ext>);
 
 impl<Ext> From<u32> for CardStatus<Ext> {
