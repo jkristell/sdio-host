@@ -225,7 +225,7 @@ impl CSD<SD> {
     pub fn card_size(&self) -> u64 {
         let block_size_bytes = 1 << self.block_length() as u64;
 
-        (self.block_count() as u64) * block_size_bytes
+        self.block_count() * block_size_bytes
     }
     /// Erase size (in blocks)
     pub fn erase_size_blocks(&self) -> u32 {
