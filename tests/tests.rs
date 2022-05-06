@@ -26,7 +26,7 @@ struct CidRes {
 struct CsdRes {
     version: u8,
     transfer_rate: u8,
-    blocks: u32,
+    blocks: u64,
     size_bytes: u64,
     read_current_minimum_vdd: CurrentConsumption,
     write_current_minimum_vdd: CurrentConsumption,
