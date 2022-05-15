@@ -127,6 +127,11 @@ pub fn program_csd() -> Cmd<R1> {
     cmd(27, 0)
 }
 
+/// CMD38: Erase all previously selected write blocks
+pub fn erase() -> Cmd<R1> {
+    cmd(38, 0)
+}
+
 /// CMD55: App Command. Indicates that next command will be a app command
 pub fn app_cmd(rca: u16) -> Cmd<R1> {
     cmd(55, u32::from(rca) << 16)

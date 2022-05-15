@@ -1,6 +1,6 @@
 //! SD-specific command definitions.
 
-use crate::common_cmd::{cmd, Cmd, R1, R3, Resp};
+use crate::common_cmd::{cmd, Cmd, Resp, R1, R3};
 
 /// R6: Published RCA response
 pub struct R6;
@@ -46,9 +46,29 @@ pub fn address_extension(arg: u32) -> Cmd<R1> {
     cmd(22, arg)
 }
 
-/// CMD23: Address extension
+/// CMD23: Defines the number of blocks (read/write) for a block read or write
+/// operation
 pub fn set_block_count(blockcount: u32) -> Cmd<R1> {
     cmd(23, blockcount)
+}
+
+/// CMD32: Sets the address of the first write block to be erased
+pub fn erase_wr_blk_start_addr(address: u32) -> Cmd<R1> {
+    cmd(35, address)
+}
+
+/// CMD33: Sets the address of the last write block of the continuous range to
+/// be erased
+pub fn erase_wr_blk_end_addr(address: u32) -> Cmd<R1> {
+    cmd(35, address)
+}
+
+/// CMD36: Sets the address of the last erase group within a continuous range to
+/// be selected for erase
+///
+/// Address is either byte address or sector address (set in OCR)
+pub fn erase_group_end(address: u32) -> Cmd<R1> {
+    cmd(36, address)
 }
 
 /// ACMD6: Bus Width
