@@ -168,6 +168,78 @@ impl fmt::Debug for CardStatus<EMMC> {
     }
 }
 
+/// Extended Card Specific Data
+///
+/// Ref JEDEC 84-A43 Section 8.4
+#[derive(Clone, Copy)]
+pub struct ExtCSD {
+    pub inner: [u32; 128],
+}
+/// From little endian words
+impl From<[u32; 128]> for ExtCSD {
+    fn from(inner: [u32; 128]) -> Self {
+        Self { inner }
+    }
+}
+impl ExtCSD {
+    pub fn boot_info(&self) -> u8 {
+        // byte 228
+        (self.inner[57] >> 24) as u8
+    }
+    pub fn sleep_awake_timeout(&self) -> u8 {
+        // byte 217
+        (self.inner[54] >> 16) as u8
+    }
+    pub fn sleep_notification_time(&self) -> u8 {
+        // byte 216
+        (self.inner[54] >> 24) as u8
+    }
+    pub fn sector_count(&self) -> u32 {
+        // bytes [215:212]
+        self.inner[53]
+    }
+    pub fn driver_strength(&self) -> u8 {
+        // byte 197
+        (self.inner[49] >> 16) as u8
+    }
+    pub fn card_type(&self) -> u8 {
+        // byte 196
+        (self.inner[49] >> 24) as u8
+    }
+    pub fn csd_structure_version(&self) -> u8 {
+        // byte 194
+        (self.inner[48] >> 8) as u8
+    }
+    pub fn extended_csd_revision(&self) -> u8 {
+        // byte 192
+        (self.inner[48] >> 24) as u8
+    }
+    pub fn data_sector_size(&self) -> u8 {
+        // byte 61
+        (self.inner[15] >> 16) as u8
+    }
+    pub fn secure_removal_type(&self) -> u8 {
+        // byte 16
+        (self.inner[4] >> 24) as u8
+    }
+}
+impl fmt::Debug for ExtCSD {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Extended CSD")
+            .field("Boot Info", &self.boot_info())
+            .field("Sleep/Awake Timeout", &self.sleep_awake_timeout())
+            .field("Sleep Notification Time", &self.sleep_notification_time())
+            .field("Sector Count", &self.sector_count())
+            .field("Driver Strength", &self.driver_strength())
+            .field("Card Type", &self.card_type())
+            .field("CSD Structure Version", &self.csd_structure_version())
+            .field("Extended CSD Revision", &self.extended_csd_revision())
+            .field("Sector Size", &self.data_sector_size())
+            .field("Secure removal type", &self.secure_removal_type())
+            .finish()
+    }
+}
+
 /// eMMC hosts need to be able to create relative card addresses so that they can be assigned to
 /// devices. SD hosts only ever retrieve RCAs from 32-bit card responses.
 impl From<u16> for RCA<EMMC> {
