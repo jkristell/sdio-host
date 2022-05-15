@@ -9,20 +9,35 @@ use core::{fmt, str};
 pub struct EMMC;
 
 impl OCR<EMMC> {
-    /// OCR \[7\]. Valid for eMMC. False for High Voltage, true for Dual voltage.
+    /// OCR \[7\]. False for High Voltage, true for Dual voltage
     pub fn is_dual_voltage_card(&self) -> bool {
-        self.0 & 0x0100_0000 != 0
+        self.0 & 0x0000_0080 != 0
+    }
+    /// OCR \[30:29\]. Access mode. Defines the addressing mode used between host and card
+    ///
+    /// 0b00: byte mode
+    /// 0b10: sector mode
+    pub fn access_mode(&self) -> u8 {
+        (self.0 & 0x6000_0000 >> 29) as u8
     }
 }
 impl fmt::Debug for OCR<EMMC> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("OCR: Operation Conditions Register")
             .field(
-                "Dual Votage",
+                "Dual Voltage",
                 &if self.is_dual_voltage_card() {
                     "yes"
                 } else {
                     "no"
+                },
+            )
+            .field(
+                "Access mode",
+                &match self.access_mode() {
+                    0b00 => "byte",
+                    0b10 => "sector",
+                    _ => "unknown",
                 },
             )
             .field("Busy", &self.is_busy())
