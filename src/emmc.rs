@@ -190,6 +190,11 @@ impl fmt::Debug for CardStatus<EMMC> {
 pub struct ExtCSD {
     pub inner: [u32; 128],
 }
+impl Default for ExtCSD {
+    fn default() -> ExtCSD {
+        ExtCSD { inner: [0; 128] }
+    }
+}
 /// From little endian words
 impl From<[u32; 128]> for ExtCSD {
     fn from(inner: [u32; 128]) -> Self {
