@@ -32,7 +32,18 @@ pub fn send_ext_csd() -> Cmd<R1> {
     cmd(8, 0)
 }
 
-/// CMD23: Defines the number of blocks (read/write) for a block read or write operation.
+/// CMD14: Host reads the reversed bus testing data pattern from a card
+pub fn bustest_read() -> Cmd<R1> {
+    cmd(14, 0)
+}
+
+/// CMD19: Host sends bus test pattern to a card
+pub fn bustest_write() -> Cmd<R1> {
+    cmd(19, 0)
+}
+
+/// CMD23: Defines the number of blocks (read/write) for a block read or write
+/// operation
 pub fn set_block_count(blockcount: u16) -> Cmd<R1> {
     cmd(23, blockcount as u32)
 }
