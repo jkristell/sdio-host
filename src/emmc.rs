@@ -2,10 +2,10 @@
 
 pub use crate::common::*;
 
-pub use core::str;
+use core::{fmt, str};
 
 /// Type marker for eMMC-specific extensions.
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug)]
 pub struct EMMC;
 
 impl OCR<EMMC> {
@@ -14,8 +14,24 @@ impl OCR<EMMC> {
         self.0 & 0x0100_0000 != 0
     }
 }
+impl fmt::Debug for OCR<EMMC> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("OCR: Operation Conditions Register")
+            .field(
+                "Dual Votage",
+                &if self.is_dual_voltage_card() {
+                    "yes"
+                } else {
+                    "no"
+                },
+            )
+            .field("Busy", &self.is_busy())
+            .finish()
+    }
+}
 
 /// All possible values of the CBX field of the CID register on eMMC devices.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum DeviceType {
     RemovableDevice = 0b00,
     BGA = 0b01,
@@ -65,16 +81,48 @@ impl CID<EMMC> {
     /// The return value is a (month, year) tuple where the month code has 1 = January and the year
     /// is an offset from either 1997 or 2013 depending on the value of `EXT_CSD_REV`.
     pub fn manufacturing_date(&self) -> (u8, u8) {
-        let month = (self.inner >> 8) as u8 & 0xF0;
-        let year = (self.inner >> 8) as u8 & 0x0F;
-        (
-            month,
-            year,
-        )
+        let month = (self.inner >> 12) as u8 & 0xF;
+        let year = (self.inner >> 8) as u8 & 0xF;
+        (month, year)
+    }
+}
+impl fmt::Debug for CID<EMMC> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("CID: Card Identification")
+            .field("Manufacturer ID", &self.manufacturer_id())
+            .field("Device Type", &self.device_type())
+            .field("OEM ID", &self.oem_application_id())
+            .field("Product Name", &self.product_name())
+            .field("Product Revision", &self.product_revision())
+            .field("Product Serial Number", &self.serial())
+            .field("Manufacturing Date", &self.manufacturing_date())
+            .finish()
     }
 }
 
 impl CSD<EMMC> {
+    /// Erase size (in blocks)
+    ///
+    /// Minimum number of write blocks that must be erased in a single erase
+    /// command
+    pub fn erase_size_blocks(&self) -> u32 {
+        let erase_grp_size = (self.0 >> 42) & 0x1F;
+        let erase_grp_mult = (self.0 >> 37) & 0x1F;
+
+        (erase_grp_size as u32 + 1) + (erase_grp_mult as u32 + 1)
+    }
+}
+impl fmt::Debug for CSD<EMMC> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("CSD: Card Specific Data")
+            .field("Transfer Rate", &self.transfer_rate())
+            .field("Read I (@min VDD)", &self.read_current_minimum_vdd())
+            .field("Write I (@min VDD)", &self.write_current_minimum_vdd())
+            .field("Read I (@max VDD)", &self.read_current_maximum_vdd())
+            .field("Write I (@max VDD)", &self.write_current_maximum_vdd())
+            .field("Erase Size (Blocks)", &self.erase_size_blocks())
+            .finish()
+    }
 }
 
 impl CardStatus<EMMC> {
@@ -87,6 +135,36 @@ impl CardStatus<EMMC> {
     /// occurred to understand what further actions are needed in order to clear this bit.
     pub fn exception_event(&self) -> bool {
         self.0 & 0x40 != 0
+    }
+}
+impl fmt::Debug for CardStatus<EMMC> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Card Status")
+            .field("Out of range error", &self.out_of_range())
+            .field("Address error", &self.address_error())
+            .field("Block len error", &self.block_len_error())
+            .field("Erase seq error", &self.erase_seq_error())
+            .field("Erase param error", &self.erase_param())
+            .field("Write protect error", &self.wp_violation())
+            .field("Card locked", &self.card_is_locked())
+            .field("Password lock unlock error", &self.lock_unlock_failed())
+            .field(
+                "Crc check for the previous command failed",
+                &self.com_crc_error(),
+            )
+            .field("Illegal command", &self.illegal_command())
+            .field("Card internal ecc failed", &self.card_ecc_failed())
+            .field("Internal card controller error", &self.cc_error())
+            .field("General Error", &self.error())
+            .field("Csd error", &self.csd_overwrite())
+            .field("Write protect error", &self.wp_erase_skip())
+            .field("Erase sequence cleared", &self.erase_reset())
+            .field("Card state", &self.state())
+            .field("Buffer empty", &self.ready_for_data())
+            .field("Switch error", &self.switch_error())
+            .field("Exception event", &self.exception_event())
+            .field("Card expects app cmd", &self.app_cmd())
+            .finish()
     }
 }
 
