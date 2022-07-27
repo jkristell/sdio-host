@@ -176,15 +176,6 @@ impl<Ext> From<u32> for OCR<Ext> {
     }
 }
 impl<Ext> OCR<Ext> {
-    /// Card Capacity Status (CCS).
-    ///
-    /// For SD cards, this is true for SDHC/SDXC/SDUC, false for SDSC.
-    ///
-    /// For eMMC devices, this is the high bit of the Access Mode field, and is true in sector mode
-    /// or false in byte mode.
-    pub fn high_capacity(&self) -> bool {
-        self.0 & 0x4000_0000 != 0
-    }
     /// Card power up status bit (busy)
     pub fn is_busy(&self) -> bool {
         self.0 & 0x8000_0000 == 0 // Set active LOW
@@ -304,7 +295,7 @@ impl<Ext> CSD<Ext> {
 /// Error and state information of an executed command
 ///
 /// Ref PLSS_v7_10 Section 4.10.1
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct CardStatus<Ext>(pub(crate) u32, PhantomData<Ext>);
 
 impl<Ext> From<u32> for CardStatus<Ext> {

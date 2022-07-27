@@ -32,7 +32,34 @@ pub fn send_ext_csd() -> Cmd<R1> {
     cmd(8, 0)
 }
 
-/// CMD23: Defines the number of blocks (read/write) for a block read or write operation.
+/// CMD14: Host reads the reversed bus testing data pattern from a card
+pub fn bustest_read() -> Cmd<R1> {
+    cmd(14, 0)
+}
+
+/// CMD19: Host sends bus test pattern to a card
+pub fn bustest_write() -> Cmd<R1> {
+    cmd(19, 0)
+}
+
+/// CMD23: Defines the number of blocks (read/write) for a block read or write
+/// operation
 pub fn set_block_count(blockcount: u16) -> Cmd<R1> {
     cmd(23, blockcount as u32)
+}
+
+/// CMD35: Sets the address of the first erase group within a range to be
+/// selected for erase
+///
+/// Address is either byte address or sector address (set in OCR)
+pub fn erase_group_start(address: u32) -> Cmd<R1> {
+    cmd(35, address)
+}
+
+/// CMD36: Sets the address of the last erase group within a continuous range to
+/// be selected for erase
+///
+/// Address is either byte address or sector address (set in OCR)
+pub fn erase_group_end(address: u32) -> Cmd<R1> {
+    cmd(36, address)
 }

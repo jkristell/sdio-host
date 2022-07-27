@@ -91,7 +91,6 @@ impl OCR<SD> {
     // 00000000 00000000 0
     //          11111111 1
     // OCR [23:15].
-    // This field is present for eMMC, but always 1 1111 1111
     pub fn voltage_window_mv(&self) -> Option<(u16, u16)> {
         let mut window = (self.0 >> 15) & 0x1FF;
         let mut min = 2_700;
@@ -116,7 +115,6 @@ impl OCR<SD> {
     // 00000000 00000000 00000000 00000000
     //        1
     // OCR [24].
-    // This field is Reserved in eMMC, and is always 0.
     pub fn v18_allowed(&self) -> bool {
         self.0 & 0x0100_0000 != 0
     }
@@ -124,7 +122,6 @@ impl OCR<SD> {
     // 00000000 00000000 00000000 00000000
     //     1
     // OCR [27].
-    // This field is Reserved in eMMC, and is always 0.
     pub fn over_2tb(&self) -> bool {
         self.0 & 0x0800_0000 != 0
     }
@@ -132,9 +129,14 @@ impl OCR<SD> {
     // 00000000 00000000 00000000 00000000
     //   1
     // OCR [29].
-    // This field is the low bit of the Access Mode field in eMMC, and is always 0.
     pub fn uhs2_card_status(&self) -> bool {
         self.0 & 0x2000_0000 != 0
+    }
+    /// Card Capacity Status (CCS)
+    ///
+    /// For SD cards, this is true for SDHC/SDXC/SDUC, false for SDSC
+    pub fn high_capacity(&self) -> bool {
+        self.0 & 0x4000_0000 != 0
     }
 }
 impl fmt::Debug for OCR<SD> {
