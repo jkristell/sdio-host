@@ -6,6 +6,7 @@ use core::{fmt, str};
 
 /// Type marker for eMMC-specific extensions.
 #[derive(Clone, Copy, Default, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct EMMC;
 
 impl OCR<EMMC> {
@@ -45,8 +46,30 @@ impl fmt::Debug for OCR<EMMC> {
     }
 }
 
+#[cfg(feature = "defmt")]
+impl defmt::Format for OCR<EMMC> {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(
+            fmt,
+            "OCR: {{ Dual Voltage: {}, Access mode: {}, Busy: {} }}",
+            if self.is_dual_voltage_card() {
+                "yes"
+            } else {
+                "no"
+            },
+            match self.access_mode() {
+                0b00 => "byte",
+                0b10 => "sector",
+                _ => "unknown",
+            },
+            self.is_busy()
+        )
+    }
+}
+
 /// All possible values of the CBX field of the CID register on eMMC devices.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum DeviceType {
     RemovableDevice = 0b00,
     BGA = 0b01,
@@ -115,6 +138,23 @@ impl fmt::Debug for CID<EMMC> {
     }
 }
 
+#[cfg(feature = "defmt")]
+impl defmt::Format for CID<EMMC> {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(
+            fmt,
+            "CID: {{ Manufacturer ID: {}, Device Type: {:?}, OEM ID: {}, Product Name: {}, Product Revision: {:?}, Product Serial Number: {}, Manufacturing Date: {:?} }}",
+            self.manufacturer_id(),
+            self.device_type(),
+            self.oem_application_id(),
+            self.product_name(),
+            self.product_revision(),
+            self.serial(),
+            self.manufacturing_date()
+        )
+    }
+}
+
 impl CSD<EMMC> {
     /// Erase size (in blocks)
     ///
@@ -137,6 +177,22 @@ impl fmt::Debug for CSD<EMMC> {
             .field("Write I (@max VDD)", &self.write_current_maximum_vdd())
             .field("Erase Size (Blocks)", &self.erase_size_blocks())
             .finish()
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for CSD<EMMC> {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(
+            fmt,
+            "CSD: {{ Transfer Rate: {}, Read I (@min VDD): {}, Write I (@min VDD): {}, Read I (@max VDD): {}, Write I (@max VDD): {}, Erase Size (Blocks): {} }}",
+            self.transfer_rate(),
+            self.read_current_minimum_vdd(),
+            self.write_current_minimum_vdd(),
+            self.read_current_maximum_vdd(),
+            self.write_current_maximum_vdd(),
+            self.erase_size_blocks()
+        )
     }
 }
 
@@ -180,6 +236,37 @@ impl fmt::Debug for CardStatus<EMMC> {
             .field("Exception event", &self.exception_event())
             .field("Card expects app cmd", &self.app_cmd())
             .finish()
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for CardStatus<EMMC> {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(
+            fmt,
+            "Card Status: {{ Out of range error: {}, Address error: {}, Block len error: {}, Erase seq error: {}, Erase param error: {}, Write protect error: {}, Card locked: {}, Password lock unlock error: {}, Crc check for the previous command failed: {}, Illegal command: {}, Card internal ecc failed: {}, Internal card controller error: {}, General Error: {}, Csd error: {}, Write protect error: {}, Erase sequence cleared: {}, Card state: {}, Buffer empty: {}, Switch error: {}, Exception event: {}, Card expects app cmd: {} }}",
+            self.out_of_range(),
+            self.address_error(),
+            self.block_len_error(),
+            self.erase_seq_error(),
+            self.erase_param(),
+            self.wp_violation(),
+            self.card_is_locked(),
+            self.lock_unlock_failed(),
+            self.com_crc_error(),
+            self.illegal_command(),
+            self.card_ecc_failed(),
+            self.cc_error(),
+            self.error(),
+            self.csd_overwrite(),
+            self.wp_erase_skip(),
+            self.erase_reset(),
+            self.state(),
+            self.ready_for_data(),
+            self.switch_error(),
+            self.exception_event(),
+            self.app_cmd()
+        )
     }
 }
 
@@ -257,6 +344,26 @@ impl fmt::Debug for ExtCSD {
             .field("Sector Size", &self.data_sector_size())
             .field("Secure removal type", &self.secure_removal_type())
             .finish()
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for ExtCSD {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(
+            fmt,
+            "Extended CSD: {{ Boot Info: {}, Sleep/Awake Timeout: {}, Sleep Notification Time: {}, Sector Count: {}, Driver Strength: {}, Card Type: {}, CSD Structure Version: {}, Extended CSD Revision: {}, Sector Size: {}, Secure removal type: {} }}",
+            self.boot_info(),
+            self.sleep_awake_timeout(),
+            self.sleep_notification_time(),
+            self.sector_count(),
+            self.driver_strength(),
+            self.card_type(),
+            self.csd_structure_version(),
+            self.extended_csd_revision(),
+            self.data_sector_size(),
+            self.secure_removal_type()
+        )
     }
 }
 

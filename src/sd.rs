@@ -3,13 +3,15 @@
 pub use crate::common::*;
 
 /// Type marker for SD-specific extensions.
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct SD;
 
 use core::{fmt, str};
 
 #[non_exhaustive]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum SDSpecVersion {
     /// Version 1.0 and and 1.0.1
     V1_0,
@@ -82,6 +84,19 @@ impl core::fmt::Debug for SCR {
             .field("1-bit width", &self.bus_width_one())
             .field("4-bit width", &self.bus_width_four())
             .finish()
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for SCR {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(
+            fmt,
+            "SCR {{ version: {:?}, 1-bit: {}, 4-bit: {} }}",
+            self.version(),
+            self.bus_width_one(),
+            self.bus_width_four()
+        )
     }
 }
 
@@ -162,6 +177,26 @@ impl fmt::Debug for OCR<SD> {
     }
 }
 
+#[cfg(feature = "defmt")]
+impl defmt::Format for OCR<SD> {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(
+            fmt,
+            "OCR {{ voltage_window: {:?}, S18A: {}, Over 2TB: {}, UHS-II: {}, CCS: {}, Busy: {} }}",
+            self.voltage_window_mv().unwrap_or((0, 0)),
+            self.v18_allowed(),
+            self.over_2tb(),
+            self.uhs2_card_status(),
+            if self.high_capacity() {
+                "SDHC/SDXC/SDUC"
+            } else {
+                "SDSC"
+            },
+            self.is_busy()
+        )
+    }
+}
+
 impl CID<SD> {
     /// OEM/Application ID
     pub fn oem_id(&self) -> &str {
@@ -198,6 +233,22 @@ impl fmt::Debug for CID<SD> {
             .field("Product Serial Number", &self.serial())
             .field("Manufacturing Date", &self.manufacturing_date())
             .finish()
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for CID<SD> {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(
+            fmt,
+            "CID {{ manufacturer_id: {:?}, oem_id: {:?}, product_name: {:?}, product_revision: {}, serial: {}, manufacturing_date: {:?} }}",
+            self.manufacturer_id(),
+            self.oem_id(),
+            self.product_name(),
+            self.product_revision(),
+            self.serial(),
+            self.manufacturing_date()
+        )
     }
 }
 
@@ -258,6 +309,24 @@ impl fmt::Debug for CSD<SD> {
     }
 }
 
+#[cfg(feature = "defmt")]
+impl defmt::Format for CSD<SD> {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(
+            fmt,
+            "CSD {{ transfer_rate: {:?}, block_count: {}, card_size: {}, read_current_minimum_vdd: {:?}, write_current_minimum_vdd: {:?}, read_current_maximum_vdd: {:?}, write_current_maximum_vdd: {:?}, erase_size_blocks: {} }}",
+            self.transfer_rate(),
+            self.block_count(),
+            self.card_size(),
+            self.read_current_minimum_vdd(),
+            self.write_current_minimum_vdd(),
+            self.read_current_maximum_vdd(),
+            self.write_current_maximum_vdd(),
+            self.erase_size_blocks()
+        )
+    }
+}
+
 impl CardStatus<SD> {
     /// Command was executed without internal ECC
     pub fn ecc_disabled(&self) -> bool {
@@ -302,6 +371,38 @@ impl fmt::Debug for CardStatus<SD> {
             .field("Card expects app cmd", &self.app_cmd())
             .field("Auth process error", &self.ake_seq_error())
             .finish()
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for CardStatus<SD> {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(
+            fmt,
+            "CardStatus {{ out_of_range: {}, address_error: {}, block_len_error: {}, erase_seq_error: {}, erase_param: {}, wp_violation: {}, card_is_locked: {}, lock_unlock_failed: {}, com_crc_error: {}, illegal_command: {}, card_ecc_failed: {}, cc_error: {}, error: {}, csd_overwrite: {}, wp_erase_skip: {}, ecc_disabled: {}, erase_reset: {}, state: {:?}, ready_for_data: {}, fx_event: {}, app_cmd: {}, ake_seq_error: {} }}",
+            self.out_of_range(),
+            self.address_error(),
+            self.block_len_error(),
+            self.erase_seq_error(),
+            self.erase_param(),
+            self.wp_violation(),
+            self.card_is_locked(),
+            self.lock_unlock_failed(),
+            self.com_crc_error(),
+            self.illegal_command(),
+            self.card_ecc_failed(),
+            self.cc_error(),
+            self.error(),
+            self.csd_overwrite(),
+            self.wp_erase_skip(),
+            self.ecc_disabled(),
+            self.erase_reset(),
+            self.state(),
+            self.ready_for_data(),
+            self.fx_event(),
+            self.app_cmd(),
+            self.ake_seq_error()
+        )
     }
 }
 
@@ -390,6 +491,28 @@ impl fmt::Debug for SDStatus {
             .field("Erase Timeout (s)", &self.erase_timeout())
             .field("Discard Support", &self.discard_support())
             .finish()
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for SDStatus {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(
+            fmt,
+            "SDStatus {{ bus_width: {:?}, secure_mode: {}, sd_memory_card_type: {}, protected_area_size: {}, speed_class: {}, video_speed_class: {}, app_perf_class: {}, move_performance: {}, allocation_unit_size: {}, erase_size: {}, erase_timeout: {}, discard_support: {} }}",
+            self.bus_width(),
+            self.secure_mode(),
+            self.sd_memory_card_type(),
+            self.protected_area_size(),
+            self.speed_class(),
+            self.video_speed_class(),
+            self.app_perf_class(),
+            self.move_performance(),
+            self.allocation_unit_size(),
+            self.erase_size(),
+            self.erase_timeout(),
+            self.discard_support()
+        )
     }
 }
 

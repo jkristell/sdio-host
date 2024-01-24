@@ -17,3 +17,9 @@ categories = [
     "embedded",
     "no-std",
 ]
+
+[dependencies]
+defmt = { version = "0.3.5", optional = true }
+
+[features]
+defmt = ["dep:defmt"]

@@ -3,6 +3,7 @@ use core::marker::PhantomData;
 
 /// Types of SD Card
 #[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[non_exhaustive]
 pub enum CardCapacity {
     /// SDSC / Standard Capacity (<= 2GB)
@@ -19,6 +20,7 @@ impl Default for CardCapacity {
 
 /// The number of data lines in use on the SDMMC bus
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[allow(missing_docs)]
 pub enum BusWidth {
     #[non_exhaustive]
@@ -29,6 +31,7 @@ pub enum BusWidth {
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum BlockSize {
     #[non_exhaustive]
     B1 = 0,
@@ -55,6 +58,7 @@ pub enum BlockSize {
 /// Ref PLSS_v7_10 Table 4-75
 /// Ref JESD84-B51 Table 68
 #[derive(Eq, PartialEq, Copy, Clone, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[allow(dead_code)]
 pub enum CurrentState {
     /// Card state is ready
@@ -162,6 +166,14 @@ impl fmt::Debug for CurrentConsumption {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let ma: u32 = self.into();
         write!(f, "{} mA", ma)
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for CurrentConsumption {
+    fn format(&self, fmt: defmt::Formatter) {
+        let ma: u32 = self.into();
+        defmt::write!(fmt, "{} mA", ma)
     }
 }
 
@@ -387,6 +399,7 @@ impl<Ext> CardStatus<Ext> {
 ///
 /// R6
 #[derive(Debug, Copy, Clone, Default)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct RCA<Ext>(pub(crate) u32, PhantomData<Ext>);
 impl<Ext> From<u32> for RCA<Ext> {
     fn from(word: u32) -> Self {
